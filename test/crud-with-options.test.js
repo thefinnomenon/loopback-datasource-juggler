@@ -413,12 +413,12 @@ describe('crud-with-options', function () {
     it('should allow save(options, cb)', function (done) {
       var options = { foo: 'bar' };
       var opts;
-      
+
       User.observe('after save', function(ctx, next) {
         opts = ctx.options;
         next();
       });
-      
+
       var u = new User();
       u.save(options, function(err) {
         should.not.exist(err);
@@ -481,8 +481,78 @@ describe('crud-with-options', function () {
   });
 
   describe('deleteById', function() {
-    it('should allow deleteById(id)', function () {
-      User.deleteById(1);
+    beforeEach(seed);
+
+    it('should allow deleteById(id) - success', function (done) {
+      User.findOne(function (e, u) {
+        User.deleteById(u.id, function(err, info) {
+          if (err) return done(err);
+          info.should.have.property('count', 1);
+          done();
+        });
+      });
+    });
+
+    it('should allow deleteById(id) - fail', function (done) {
+      User.deleteById(9999, function(err, info) {
+        if (err) return done(err);
+        info.should.have.property('count', 0);
+        done();
+      });
+    });
+
+    it('should allow deleteById(id) - fail with error', function (done) {
+      User.deleteById(9999, { strict: true }, function(err) {
+        should.exist(err);
+        err.message.should.equal('No instance with id 9999 found for User');
+        err.should.have.property('code', 'NOT_FOUND');
+        err.should.have.property('statusCode', 404);
+        done();
+      });
+    });
+  });
+
+  describe('prototype.delete', function() {
+    beforeEach(seed);
+
+    it('should allow delete(id) - success', function (done) {
+      User.findOne(function (e, u) {
+        u.delete(function(err, info) {
+          if (err) return done(err);
+          info.should.have.property('count', 1);
+          done();
+        });
+      });
+    });
+
+    it('should allow delete(id) - fail', function (done) {
+      User.findOne(function (e, u) {
+        u.delete(function(err, info) {
+          if (err) return done(err);
+          info.should.have.property('count', 1);
+          u.delete(function(err, info) {
+            if (err) return done(err);
+            info.should.have.property('count', 0);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should allow delete(id) - fail with error', function (done) {
+      User.findOne(function (e, u) {
+        u.delete(function(err, info) {
+          if (err) return done(err);
+          info.should.have.property('count', 1);
+          u.delete({ strict: true }, function(err) {
+            should.exist(err);
+            err.message.should.equal('No instance with id ' + u.id + ' found for User');
+            err.should.have.property('code', 'NOT_FOUND');
+            err.should.have.property('statusCode', 404);
+            done();
+          });
+        });
+      });
     });
   });
 
